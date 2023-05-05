@@ -170,7 +170,7 @@ def run_task(gelen: Message, duzenlenecek: Message):
                 f"\nNo Filesize Medias: `{mediawosize}`" \
                 f"\nPassed Time: `{TimeFormatter(time.time() - start_time)}`" \
                 f'\nBot Uptime: `{TimeFormatter(time.time() - botStartTime)}`'
-                duzenlenecek.edit_text(
+            duzenlenecek.edit_text(
                      f"**% {'{:.3f}'.format(current * 100 / total)}** {get_progressbar(current, total)} \n\n{infochat}\n\n[💜](https://iit-jee.tk/) **Process / İşlem:** \n\nCalculated Total Size: `{humanbytes(total_calculated_size)}` (`{str(total_calculated_size)} bytes`) \nProcessed Messages: `{current - f_msg_id}`  \nDeleted Messages: `{empty}` \nDamaged Messages: `{nomessage}`\nNon-media Messages: `{nomedia}` \nmedia Messages: `{m}` \nNo Filesize Medias: `{mediawosize}` \nPassed Time: `{TimeFormatter(time.time() - start_time)}`\nBot Uptime: `{TimeFormatter(time.time() - botStartTime)}`\n\n[✅](https://t.me/{Config.CHANNEL_OR_CONTACT}) **Finished / Bitti**"
         ,
                     parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True
