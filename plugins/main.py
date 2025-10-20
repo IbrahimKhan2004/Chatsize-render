@@ -11,7 +11,7 @@ from helper_funcs.auth_user_check import AuthUserCheck
 from helper_funcs.force_sub import ForceSub
 from pyrogram import Client, filters
 from pyrogram.enums.parse_mode import ParseMode
-from pyrogram.enums import ChatType
+from pyrogram.enums import ChatType, ChatAction
 from pyrogram.errors import FloodWait
 from helper_funcs.humanfuncs import TimeFormatter, get_progressbar, humanbytes
 from pyrogram.errors.exceptions.bad_request_400 import \
@@ -75,14 +75,6 @@ def run_task(gelen: Message, duzenlenecek: Message):
             LOGGER.exception(e)
             duzenlenecek.edit_text(f'Errors - {e}', disable_web_page_preview=True)
 
-        if a != b:
-            try:
-                duzenlenecek._client.get_chat(t_chatid)
-            except Exception as e:
-                duzenlenecek.edit_text(f'Error getting target chat: {e}\n\nPlease make sure I am a member of the target channel and have permission to send messages.')
-                LOGGER.exception(e)
-                return on_task_complete()
-
         if not gotchat:
             duzenlenecek.edit_text(
                 '🇹🇷 Beni kanalınıza/grubunuza yönetici olarak eklemelisiniz.' \
@@ -90,6 +82,14 @@ def run_task(gelen: Message, duzenlenecek: Message):
                     , disable_web_page_preview=True
             )
             return on_task_complete()
+
+        if a != b:
+            try:
+                duzenlenecek._client.send_chat_action(t_chatid, ChatAction.TYPING)
+            except Exception as e:
+                duzenlenecek.edit_text(f'Error getting target chat: {e}\n\nPlease make sure I am a member of the target channel and have permission to send messages.')
+                LOGGER.exception(e)
+                return on_task_complete()
 
         #
         txt = ""
