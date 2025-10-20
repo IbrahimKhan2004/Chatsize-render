@@ -18,8 +18,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code
 COPY . .
 
-# Add a non-root user
-RUN useradd -m myuser
+# Add a non-root user and change ownership of the app directory
+RUN useradd -m myuser && chown -R myuser:myuser /usr/src/app
 USER myuser
 
 # Expose the port the app runs on
