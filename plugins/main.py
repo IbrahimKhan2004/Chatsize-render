@@ -68,6 +68,14 @@ def run_task(gelen: Message, duzenlenecek: Message):
                     , disable_web_page_preview=True
             )
             return on_task_complete()
+
+        if a != b:
+            try:
+                duzenlenecek._client.get_chat(t_chatid)
+            except Exception as e:
+                duzenlenecek.edit_text(f'Hedef sohbet alınırken hata oluştu: {e}')
+                LOGGER.exception(e)
+                return on_task_complete()
         except (UsernameInvalid, UsernameNotModified):
             duzenlenecek.edit_text('Geçersiz kullanıcı adı.', disable_web_page_preview=True)
             return on_task_complete()
