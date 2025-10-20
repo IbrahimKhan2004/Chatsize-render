@@ -65,6 +65,35 @@ The bot can also be used as a forwarder to send messages from one chat to anothe
 https://t.me/c/180763750/915_-100110678269
 ```
 
+### Advanced Forwarding: Specifying a Message Range
+
+You can forward a specific range of messages from a source channel to a target channel. This is useful for migrating content or sharing archives.
+
+The command structure is as follows:
+
+`LAST_MESSAGE_URL`\_`TARGET_CHAT_ID`\_`FIRST_MESSAGE_ID`
+
+*   `LAST_MESSAGE_URL`: The URL of the **last message** in the desired range from the source channel.
+*   `TARGET_CHAT_ID`: The ID of the channel or group where the messages will be forwarded.
+*   `FIRST_MESSAGE_ID`: The ID of the **first message** in the range you want to forward.
+
+**Example Scenario:**
+
+Imagine you want to forward all messages from December 21st to December 25th from a private channel to another channel.
+
+1.  **Source Channel ID**: `-1001854653008`
+2.  **Target Channel ID**: `-1003169274606`
+3.  **First Message (Dec 21st)**: `https://t.me/c/1854653008/20214` (Message ID is `20214`)
+4.  **Last Message (Dec 25th)**: `https://t.me/c/1854653008/20378` (Message ID is `20378`)
+
+To execute this, you would send the following command to the bot:
+
+```
+https://t.me/c/1854653008/20378_-1003169274606_20214
+```
+
+The bot will then start forwarding all messages from message ID `20214` to `20378` to the target channel.
+
 ## Configuration
 
 The bot is configured using environment variables. The following variables are required:
