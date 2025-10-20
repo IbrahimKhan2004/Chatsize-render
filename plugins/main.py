@@ -75,6 +75,14 @@ def run_task(gelen: Message, duzenlenecek: Message):
             LOGGER.exception(e)
             duzenlenecek.edit_text(f'Errors - {e}', disable_web_page_preview=True)
 
+        if a != b:
+            try:
+                duzenlenecek._client.get_chat(t_chatid)
+            except Exception as e:
+                duzenlenecek.edit_text(f'Error getting target chat: {e}\n\nPlease make sure I am a member of the target channel and have permission to send messages.')
+                LOGGER.exception(e)
+                return on_task_complete()
+
         if not gotchat:
             duzenlenecek.edit_text(
                 '🇹🇷 Beni kanalınıza/grubunuza yönetici olarak eklemelisiniz.' \
@@ -82,13 +90,7 @@ def run_task(gelen: Message, duzenlenecek: Message):
                     , disable_web_page_preview=True
             )
             return on_task_complete()
-        infochat = f"💚 **Chat Info / Çet Bilgileri:**" \
-                f"\n\nName: `{gotchat.title}`" \
-                f"\nUsername: @{gotchat.username}" \
-                f"\nChat ID: `{gotchat.id}`" \
-                f"\nChat DC: `{gotchat.dc_id}`" \
-                f'\nFirst Message ID: {f_msg_id}' \
-                f'\nLast Message ID: `{last_msg_id}`'
+
         #
         txt = ""
         total = last_msg_id + 1
@@ -103,21 +105,40 @@ def run_task(gelen: Message, duzenlenecek: Message):
             # guncelle
             if current % 30 == 0:
                 try:
-                    txt = f"**% {'{:.3f}'.format(current * 100 / total)}** {get_progressbar(current, total)}" \
-                        f"\n\n{infochat}\n\n[💜](iit-jee.tk/) **Process / İşlem:**" \
-                        f"\n\nCalculated Total Size: `{humanbytes(total_calculated_size)}` (`{str(total_calculated_size)} bytes`)" \
-                        f"\nProcessed Messages: `{current - f_msg_id}`" \
-                        f"\nTo Be Processed: `{total - current}`" \
-                        f"\nDeleted Messages: `{empty}`" \
-                        f"\nDamaged Messages: `{nomessage}`" \
-                        f"\nNon-media Messages: `{nomedia}`" \
-                        f"\nmedia Messages: `{m}`" \
-                        f"\nNo Filesize Medias: `{mediawosize}`" \
-                        f"\nPassed Time: `{TimeFormatter(time.time() - start_time)}`" \
-                        f"\nElapsed Time: `{TimeFormatter((total - current) / hiz)}`" \
-                        f"\nPercent: `% {'{:.7f}'.format((current * 100 / total))}`" \
-                        f"\nSpeed: `{hiz} message/sec`" \
-                        f'\nBot Uptime: `{TimeFormatter(time.time() - botStartTime)}`'
+
+                    infochat = f"**💚 Chat Info**\n" \
+                               f"**Name:** `{gotchat.title}`\n" \
+                               f"**Username:** @{gotchat.username}\n" \
+                               f"**Chat ID:** `{gotchat.id}`\n" \
+                               f"**Chat DC:** `{gotchat.dc_id}`\n" \
+                               f"**First Message ID:** `{f_msg_id}`\n" \
+                               f"**Last Message ID:** `{last_msg_id}`"
+
+
+                    process_info = f"**💜 Process**\n" \
+                                   f"**Total Size:** `{humanbytes(total_calculated_size)}`\n" \
+                                   f"**Processed:** `{current - f_msg_id}`\n" \
+                                   f"**Remaining:** `{total - current}`\n" \
+                                   f"**Deleted:** `{empty}`\n" \
+                                   f"**Damaged:** `{nomessage}`\n" \
+                                   f"**Non-Media:** `{nomedia}`\n" \
+                                   f"**Media:** `{m}`\n" \
+                                   f"**No Filesize:** `{mediawosize}`"
+
+
+                    time_info = f"**⏱️ Time**\n" \
+                                f"**Passed:** `{TimeFormatter(time.time() - start_time)}`\n" \
+                                f"**Elapsed:** `{TimeFormatter((total - current) / hiz if hiz > 0 else 0)}`\n" \
+                                f"**Speed:** `{hiz} msg/s`\n" \
+                                f"**Uptime:** `{TimeFormatter(time.time() - botStartTime)}`"
+
+
+                    progress = f"**📊 Progress**\n" \
+                               f"`{get_progressbar(current, total)}`\n" \
+                               f"**Percent:** `%{'{:.7f}'.format((current * 100 / total))}`"
+
+
+                    txt = f"{progress}\n\n{infochat}\n\n{process_info}\n\n{time_info}"
                     duzenlenecek.edit_text(text=txt, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
                 except: pass
             # kaydet
@@ -159,20 +180,39 @@ def run_task(gelen: Message, duzenlenecek: Message):
             continue
         #
         if last_msg_id <= 30:
-            txt = f"**% {'{:.3f}'.format(current * 100 / total)}** {get_progressbar(current, total)}" \
-                f"\n\n{infochat}\n\n[💜](iit-jee.tk/) **Process / İşlem:**" \
-                f"\n\nCalculated Total Size: `{humanbytes(total_calculated_size)}` (`{str(total_calculated_size)} bytes`)" \
-                f"\nProcessed Messages: `{current - f_msg_id}`" \
-                f"\nDeleted Messages: `{empty}`" \
-                f"\nDamaged Messages: `{nomessage}`" \
-                f"\nNon-media Messages: `{nomedia}`" \
-                f"\nmedia Messages: `{m}`" \
-                f"\nNo Filesize Medias: `{mediawosize}`" \
-                f"\nPassed Time: `{TimeFormatter(time.time() - start_time)}`" \
-                f'\nBot Uptime: `{TimeFormatter(time.time() - botStartTime)}`'
+
+            infochat = f"**💚 Chat Info**\n" \
+                       f"**Name:** `{gotchat.title}`\n" \
+                       f"**Username:** @{gotchat.username}\n" \
+                       f"**Chat ID:** `{gotchat.id}`\n" \
+                       f"**Chat DC:** `{gotchat.dc_id}`\n" \
+                       f"**First Message ID:** `{f_msg_id}`\n" \
+                       f"**Last Message ID:** `{last_msg_id}`"
+
+
+            process_info = f"**💜 Process**\n" \
+                           f"**Total Size:** `{humanbytes(total_calculated_size)}`\n" \
+                           f"**Processed:** `{current - f_msg_id}`\n" \
+                           f"**Deleted:** `{empty}`\n" \
+                           f"**Damaged:** `{nomessage}`\n" \
+                           f"**Non-Media:** `{nomedia}`\n" \
+                           f"**Media:** `{m}`\n" \
+                           f"**No Filesize:** `{mediawosize}`"
+
+
+            time_info = f"**⏱️ Time**\n" \
+                        f"**Passed:** `{TimeFormatter(time.time() - start_time)}`\n" \
+                        f"**Uptime:** `{TimeFormatter(time.time() - botStartTime)}`"
+
+
+            progress = f"**📊 Progress**\n" \
+                       f"`{get_progressbar(current, total)}`\n" \
+                       f"**Percent:** `%{'{:.3f}'.format(current * 100 / total)}`"
+
+
+            txt = f"{progress}\n\n{infochat}\n\n{process_info}\n\n{time_info}\n\n[✅](https://t.me/{Config.CHANNEL_OR_CONTACT}) **Finished**"
             duzenlenecek.edit_text(
-                     f"**% {'{:.3f}'.format(current * 100 / total)}** {get_progressbar(current, total)} \n\n{infochat}\n\n[💜](https://iit-jee.tk/) **Process / İşlem:** \n\nCalculated Total Size: `{humanbytes(total_calculated_size)}` (`{str(total_calculated_size)} bytes`) \nProcessed Messages: `{current - f_msg_id}`  \nDeleted Messages: `{empty}` \nDamaged Messages: `{nomessage}`\nNon-media Messages: `{nomedia}` \nmedia Messages: `{m}` \nNo Filesize Medias: `{mediawosize}` \nPassed Time: `{TimeFormatter(time.time() - start_time)}`\nBot Uptime: `{TimeFormatter(time.time() - botStartTime)}`\n\n[✅](https://t.me/{Config.CHANNEL_OR_CONTACT}) **Finished / Bitti**"
-        ,
+                     txt,
                     parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True
                 )
     except Exception as e:
