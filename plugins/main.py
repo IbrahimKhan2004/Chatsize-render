@@ -4,7 +4,7 @@ import math
 import re
 import time
 from pyrogram.types.messages_and_media.message import Message
-from pyrogram.types import Chat
+from pyrogram.types import Chat, InlineKeyboardButton, InlineKeyboardMarkup
 from bot import LOGGER, botStartTime
 from config import Config
 from helper_funcs.auth_user_check import AuthUserCheck
@@ -19,12 +19,24 @@ from pyrogram.errors.exceptions.bad_request_400 import \
 from pyrogram.errors.exceptions.not_acceptable_406 import ChannelPrivate
 
 quee = []
+cancelled_tasks = set()
 tg_link_regex = "(https://)?(t\.me/|telegram\.me/|telegram\.dog/)(c/)?(\d+|[a-zA-Z_0-9]+)/(\d+)_?(.\d+)?_?(\d+)?"
 f_msg_id = 0
 t_chatid = 0
 a=""
 b=""
+
+@Client.on_callback_query(filters.regex("^cancel_task"))
+def cancel_handler(_, query):
+    user_id = query.from_user.id
+    cancelled_tasks.add(user_id)
+    query.answer("Cancelling task...", show_alert=True)
+
 def run_task(gelen: Message, duzenlenecek: Message):
+    user_id = gelen.from_user.id
+    if user_id in cancelled_tasks:
+        cancelled_tasks.remove(user_id)
+
     try:
         if gelen.text:
             filters_list = []
@@ -107,6 +119,11 @@ def run_task(gelen: Message, duzenlenecek: Message):
         empty = nomessage = nomedia = mediawosize = total_calculated_size = m = 0
         start_time = time.time()
         while current < total:
+            if user_id in cancelled_tasks:
+                cancelled_tasks.remove(user_id)
+                duzenlenecek.edit_text("❌ **Task Cancelled by user.**")
+                return on_task_complete()
+
             current = current + 1
             # hız
             try: hiz = (current / ((time.time() - start_time).__round__())).__round__()
@@ -148,7 +165,8 @@ def run_task(gelen: Message, duzenlenecek: Message):
 
 
                     txt = f"{progress}\n\n{infochat}\n\n{process_info}\n\n{time_info}"
-                    duzenlenecek.edit_text(text=txt, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
+                    cancel_button = InlineKeyboardMarkup([[InlineKeyboardButton("❌ Cancel Task ❌", callback_data="cancel_task")]])
+                    duzenlenecek.edit_text(text=txt, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True, reply_markup=cancel_button)
                 except: pass
             # kaydet
             message:Message = None
