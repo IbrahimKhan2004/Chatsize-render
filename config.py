@@ -18,7 +18,6 @@ class Config:
     HEROKU_APP_NAME = os.environ.get('HEROKU_APP_NAME', "")
 
     # customisations
-    FORWARD_DELAY = int(os.environ.get('FORWARD_DELAY', 3)) # delay in seconds between forwards
     FINISHED_PROGRESS_STR = os.environ.get('FINISHED_PROGRESS_STR','●')
     UN_FINISHED_PROGRESS_STR = os.environ.get('UN_FINISHED_PROGRESS_STR','○')
     PROGRESSBAR_LENGTH = int(os.environ.get('PROGRESSBAR_LENGTH', 25))
