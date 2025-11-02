@@ -27,8 +27,17 @@ b=""
 def run_task(gelen: Message, duzenlenecek: Message):
     try:
         if gelen.text:
+            filters_list = []
+            link_to_parse = gelen.text
+            if ' --filter ' in gelen.text:
+                parts = gelen.text.split(' --filter ')
+                link_to_parse = parts[0].strip()
+                filter_part = parts[1].strip()
+                if filter_part:
+                    filters_list = [f.strip().lower() for f in filter_part.split(',')]
+
             regex = re.compile(tg_link_regex)
-            match = regex.match(gelen.text)
+            match = regex.match(link_to_parse)
             if not match:
                 duzenlenecek.edit_text(
                     '🇹🇷 Kanaldaki son mesajı iletin ya da son mesaj linkini gönderin.' \
@@ -146,14 +155,36 @@ def run_task(gelen: Message, duzenlenecek: Message):
             try:
                 message = duzenlenecek._client.get_messages(chat_id=chat_id, message_ids=current, replies=0)
                 if a != b:
-                    time.sleep(3)
-                    message.copy(t_chatid)
+                    forward_this = True
+                    if filters_list:
+                        has_allowed_media = False
+                        for media_type in filters_list:
+                            if getattr(message, media_type, None):
+                                has_allowed_media = True
+                                break
+                        if not has_allowed_media:
+                            forward_this = False
+                    
+                    if forward_this:
+                        time.sleep(3)
+                        message.copy(t_chatid)
             except FloodWait as e:
                 time.sleep(e.value)
                 message = duzenlenecek._client.get_messages(chat_id=chat_id, message_ids=current, replies=0)
                 if a != b:
-                    time.sleep(3)
-                    message.copy(t_chatid)
+                    forward_this = True
+                    if filters_list:
+                        has_allowed_media = False
+                        for media_type in filters_list:
+                            if getattr(message, media_type, None):
+                                has_allowed_media = True
+                                break
+                        if not has_allowed_media:
+                            forward_this = False
+                    
+                    if forward_this:
+                        time.sleep(3)
+                        message.copy(t_chatid)
             except Exception as e:
                 LOGGER.exception(e)
                 continue
@@ -163,6 +194,15 @@ def run_task(gelen: Message, duzenlenecek: Message):
             elif message.empty:
                 empty = empty + 1
                 continue
+            
+            if a != b and filters_list:
+                has_allowed_media = False
+                for media_type in filters_list:
+                    if getattr(message, media_type, None):
+                        has_allowed_media = True
+                        break
+                if not has_allowed_media:
+                    continue
             #◙ find media
             media = None
             media_array = [message.document, message.video, message.audio, message.photo, message.animation, message.voice, message.video_note]
