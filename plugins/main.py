@@ -114,11 +114,14 @@ def run_task(gelen: Message, duzenlenecek: Message):
 
         #
         txt = ""
-        total = last_msg_id + 1
+        total_loop = last_msg_id + 1
         current = f_msg_id - 1
+        
+        total_messages_in_range = last_msg_id - f_msg_id + 1
+
         empty = nomessage = nomedia = mediawosize = total_calculated_size = m = 0
         start_time = time.time()
-        while current < total:
+        while current < total_loop:
             if user_id in cancelled_tasks:
                 cancelled_tasks.remove(user_id)
                 duzenlenecek.edit_text("❌ **Task Cancelled by user.**")
@@ -126,12 +129,12 @@ def run_task(gelen: Message, duzenlenecek: Message):
 
             current = current + 1
             # hız
-            try: hiz = (current / ((time.time() - start_time).__round__())).__round__()
+            try: hiz = ((current - f_msg_id + 1) / ((time.time() - start_time).__round__())).__round__()
             except: hiz = 0
             # guncelle
             if current % 30 == 0:
                 try:
-
+                    processed_count = current - f_msg_id + 1
                     infochat = f"**💚 Chat Info**\n" \
                                f"**Name:** `{gotchat.title}`\n" \
                                f"**Username:** @{gotchat.username}\n" \
@@ -143,8 +146,8 @@ def run_task(gelen: Message, duzenlenecek: Message):
 
                     process_info = f"**💜 Process**\n" \
                                    f"**Total Size:** `{humanbytes(total_calculated_size)}`\n" \
-                                   f"**Processed:** `{current - f_msg_id}`\n" \
-                                   f"**Remaining:** `{total - current}`\n" \
+                                   f"**Processed:** `{processed_count}`\n" \
+                                   f"**Remaining:** `{total_messages_in_range - processed_count}`\n" \
                                    f"**Deleted:** `{empty}`\n" \
                                    f"**Damaged:** `{nomessage}`\n" \
                                    f"**Non-Media:** `{nomedia}`\n" \
@@ -154,14 +157,14 @@ def run_task(gelen: Message, duzenlenecek: Message):
 
                     time_info = f"**⏱️ Time**\n" \
                                 f"**Passed:** `{TimeFormatter(time.time() - start_time)}`\n" \
-                                f"**Elapsed:** `{TimeFormatter((total - current) / hiz if hiz > 0 else 0)}`\n" \
+                                f"**Elapsed:** `{TimeFormatter((total_messages_in_range - processed_count) / hiz if hiz > 0 else 0)}`\n" \
                                 f"**Speed:** `{hiz} msg/s`\n" \
                                 f"**Uptime:** `{TimeFormatter(time.time() - botStartTime)}`"
 
 
                     progress = f"**📊 Progress**\n" \
-                               f"`{get_progressbar(current, total)}`\n" \
-                               f"**Percent:** `%{'{:.7f}'.format((current * 100 / total))}`"
+                               f"`{get_progressbar(processed_count, total_messages_in_range)}`\n" \
+                               f"**Percent:** `%{'{:.2f}'.format((processed_count * 100 / total_messages_in_range))}`"
 
 
                     txt = f"{progress}\n\n{infochat}\n\n{process_info}\n\n{time_info}"
@@ -239,8 +242,8 @@ def run_task(gelen: Message, duzenlenecek: Message):
                 mediawosize  += 1
             continue
         #
-        if last_msg_id <= 30:
-
+        processed_count = current - f_msg_id + 1
+        if last_msg_id <= 30 or True:
             infochat = f"**💚 Chat Info**\n" \
                        f"**Name:** `{gotchat.title}`\n" \
                        f"**Username:** @{gotchat.username}\n" \
@@ -252,7 +255,7 @@ def run_task(gelen: Message, duzenlenecek: Message):
 
             process_info = f"**💜 Process**\n" \
                            f"**Total Size:** `{humanbytes(total_calculated_size)}`\n" \
-                           f"**Processed:** `{current - f_msg_id}`\n" \
+                           f"**Processed:** `{processed_count}`\n" \
                            f"**Deleted:** `{empty}`\n" \
                            f"**Damaged:** `{nomessage}`\n" \
                            f"**Non-Media:** `{nomedia}`\n" \
@@ -266,8 +269,8 @@ def run_task(gelen: Message, duzenlenecek: Message):
 
 
             progress = f"**📊 Progress**\n" \
-                       f"`{get_progressbar(current, total)}`\n" \
-                       f"**Percent:** `%{'{:.3f}'.format(current * 100 / total)}`"
+                       f"`{get_progressbar(processed_count, total_messages_in_range)}`\n" \
+                       f"**Percent:** `%{'{:.2f}'.format((processed_count * 100 / total_messages_in_range))}`"
 
 
             txt = f"{progress}\n\n{infochat}\n\n{process_info}\n\n{time_info}\n\n[✅](https://t.me/{Config.CHANNEL_OR_CONTACT}) **Finished**"
