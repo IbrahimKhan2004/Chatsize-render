@@ -187,7 +187,7 @@ def run_task(gelen: Message, duzenlenecek: Message):
                             forward_this = False
                     
                     if forward_this:
-                        time.sleep(3)
+                        time.sleep(6)
                         message.copy(t_chatid)
             except FloodWait as e:
                 time.sleep(e.value)
@@ -204,7 +204,7 @@ def run_task(gelen: Message, duzenlenecek: Message):
                             forward_this = False
                     
                     if forward_this:
-                        time.sleep(3)
+                        time.sleep(6)
                         message.copy(t_chatid)
             except Exception as e:
                 LOGGER.exception(e)
