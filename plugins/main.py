@@ -25,6 +25,7 @@ f_msg_id = 0
 t_chatid = 0
 a=""
 b=""
+forward_delay = 6
 
 @Client.on_callback_query(filters.regex("^cancel_task"))
 def cancel_handler(_, query):
@@ -187,7 +188,7 @@ def run_task(gelen: Message, duzenlenecek: Message):
                             forward_this = False
                     
                     if forward_this:
-                        time.sleep(6)
+                        time.sleep(forward_delay)
                         message.copy(t_chatid)
             except FloodWait as e:
                 time.sleep(e.value)
@@ -204,7 +205,7 @@ def run_task(gelen: Message, duzenlenecek: Message):
                             forward_this = False
                     
                     if forward_this:
-                        time.sleep(6)
+                        time.sleep(forward_delay)
                         message.copy(t_chatid)
             except Exception as e:
                 LOGGER.exception(e)
@@ -309,3 +310,20 @@ def welcome(_, message: Message):
         "\nClick the last message in the channel / group, copy the message link, paste it to me Sir.." \
         f"\n\n**@{Config.CHANNEL_OR_CONTACT}**"
     message.reply_text(te, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
+
+@Client.on_message(filters.command("delay"))
+def delay_command(_, message: Message):
+    global forward_delay
+    if not AuthUserCheck(message): return
+    if len(message.command) > 1:
+        try:
+            delay = int(message.command[1])
+            if 0 <= delay <= 60:
+                forward_delay = delay
+                message.reply_text(f"Forwarding delay has been set to {delay} seconds.")
+            else:
+                message.reply_text("Please provide a delay between 0 and 60 seconds.")
+        except ValueError:
+            message.reply_text("Invalid delay. Please provide a number.")
+    else:
+        message.reply_text(f"Current delay is {forward_delay} seconds. Use /delay <seconds> to set a new delay.")
