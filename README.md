@@ -11,6 +11,7 @@ ChatSizeBot is a powerful and versatile Telegram bot that calculates the total s
 * **Comprehensive File Type Support**: Calculates the total size of documents, videos, audio files, photos, animations, voice messages, and video notes.
 * **Advanced Message Forwarding**: Forward messages from one chat to another, with support for specific message ranges.
 * **Media Filtering**: When forwarding, you can specify which media types to include (e.g., only `video` and `document`).
+* **Configurable Forwarding Delay**: Set a custom delay between forwarded messages to prevent spam.
 * **Real-Time Progress Updates**: Keeps you informed with a real-time progress bar.
 * **Flexible Authentication**: Can be configured to serve all users or be restricted to a specific set of authorized users.
 * **Forced Subscription**: Can be set up to require users to subscribe to a designated channel before they can use the bot.
@@ -31,6 +32,7 @@ ChatSizeBot is a powerful and versatile Telegram bot that calculates the total s
 
     ```
     start - bot help
+    delay - set forwarding delay
     ping - check bot online status
     stats - bot statistics
     shell - execute shell command (admin only)
@@ -102,6 +104,25 @@ To forward only the **videos** and **documents** from the previous example, you 
 https://t.me/c/1854653008/20378_-1003169274606_20214 --filter video,document
 
 The bot will now skip all other message types (like text, photos, audio, etc.) and only forward the videos and documents in that range.
+
+### 4. Configure Forwarding Delay
+
+You can control the speed of message forwarding by setting a custom delay. This is useful for preventing spam and staying within Telegram's rate limits.
+
+*   **Check the current delay:**
+    ```
+    /delay
+    ```
+*   **Set a new delay:**
+    ```
+    /delay <seconds>
+    ```
+    Replace `<seconds>` with a number between 0 and 60.
+
+    **Example (set a 10-second delay):**
+    ```
+    /delay 10
+    ```
 
 ## Configuration
 
