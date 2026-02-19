@@ -322,16 +322,16 @@ def finalize_index(client, message, state):
     original_message.text = command_text
     handler(client, original_message)
 
-@Client.on_message(filters.private & filters.incoming & filters.command, group=-1)
-def command_interceptor(client, message):
-    user_id = message.from_user.id
-    if user_id in USER_STATES:
-        del USER_STATES[user_id]
-
-@Client.on_message(filters.private & filters.incoming & ~filters.command, group=-1)
+@Client.on_message(filters.private & filters.incoming, group=-1)
 def interactive_handler(client, message):
     user_id = message.from_user.id
     if user_id not in USER_STATES:
+        return
+
+    text = message.text or message.caption or ""
+
+    if text.startswith("/"):
+        del USER_STATES[user_id]
         return
 
     state = USER_STATES[user_id]
@@ -343,8 +343,12 @@ def interactive_handler(client, message):
     state["last_activity"] = time.time()
 
     step = state.get("step")
-    text = message.text
     cancel_markup = InlineKeyboardMarkup([[InlineKeyboardButton("❌ Cancel", callback_data="cancel_index")]])
+
+    if not text:
+        message.reply_text("❌ Please send a text message or a link.", reply_markup=cancel_markup)
+        message.stop_propagation()
+        return
 
     if step == "WAIT_START_LINK":
         regex = re.compile(tg_link_regex)
