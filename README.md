@@ -32,6 +32,7 @@ ChatSizeBot is a powerful and versatile Telegram bot that calculates the total s
 
     ```
     start - bot help
+    index - interactive indexing/forwarding
     delay - set forwarding delay
     ping - check bot online status
     stats - bot statistics
@@ -41,9 +42,23 @@ ChatSizeBot is a powerful and versatile Telegram bot that calculates the total s
 
 ## Usage
 
-The bot operates by parsing a specially formatted Telegram message link.
+The bot can be used either through an interactive command or by sending a specially formatted link.
 
-### 1. Calculate Chat Size
+### 1. Interactive Mode (Recommended)
+
+Use the `/index` command to start a step-by-step interactive process. The bot will ask you for:
+1. **Start Message Link**: The URL of the first message in the range.
+2. **End Message Link**: The URL of the last message in the range.
+3. **Target Chat**: (Optional) The ID, Username, or Link of the chat where you want to forward messages. Click **Skip** if you only want to calculate the size.
+4. **Media Filters**: (Optional) Specific media types to forward (e.g., `video,document`). Click **Skip** to forward everything.
+
+This mode is more user-friendly and handles validation for you.
+
+### 2. Manual Link Mode
+
+The bot also operates by parsing specially formatted Telegram message links.
+
+#### A. Calculate Chat Size
 
 To calculate the total size of all media in a chat, send the URL of the last message in that chat.
 
@@ -57,7 +72,7 @@ You can also specify a starting message ID to calculate the size of a specific r
 
 https://t.me/c/180763750/91_10
 
-### 2. Forward Messages
+#### B. Forward Messages
 
 The bot can also be used as a forwarder to send messages from one chat to another.
 
@@ -79,7 +94,7 @@ https://t.me/c/1854653008/20378_-1003169274606_20214
 
 The bot will then start forwarding all messages from message ID `20214` to `20378` to the target channel.
 
-### 3. Filtering by Media Type
+#### C. Filtering by Media Type
 
 When forwarding a range of messages, you can choose to forward only specific types of media by adding a `--filter` flag. This is useful for migrating only videos, documents, or any other media type.
 
@@ -105,7 +120,7 @@ https://t.me/c/1854653008/20378_-1003169274606_20214 --filter video,document
 
 The bot will now skip all other message types (like text, photos, audio, etc.) and only forward the videos and documents in that range.
 
-### 4. Configure Forwarding Delay
+### 3. Configure Forwarding Delay
 
 You can control the speed of message forwarding by setting a custom delay. This is useful for preventing spam and staying within Telegram's rate limits.
 
