@@ -325,113 +325,130 @@ def finalize_index(client, message, state):
 @Client.on_message(filters.private & filters.incoming, group=-1)
 def interactive_handler(client, message):
     user_id = message.from_user.id
-    if user_id not in USER_STATES:
-        return
+    try:
+        if user_id not in USER_STATES:
+            return
 
-    text = message.text or message.caption or ""
+        text = message.text or message.caption or ""
 
-    if text.startswith("/"):
-        del USER_STATES[user_id]
-        return
+        if text.startswith("/"):
+            del USER_STATES[user_id]
+            return
 
-    state = USER_STATES[user_id]
+        state = USER_STATES[user_id]
 
-    # Timeout check (5 minutes)
-    if time.time() - state.get("last_activity", time.time()) > 300:
-        del USER_STATES[user_id]
-        return
-    state["last_activity"] = time.time()
+        # Timeout check (5 minutes)
+        if time.time() - state.get("last_activity", time.time()) > 300:
+            del USER_STATES[user_id]
+            return
+        state["last_activity"] = time.time()
 
-    step = state.get("step")
-    cancel_markup = InlineKeyboardMarkup([[InlineKeyboardButton("❌ Cancel", callback_data="cancel_index")]])
+        step = state.get("step")
+        cancel_markup = InlineKeyboardMarkup([[InlineKeyboardButton("❌ Cancel", callback_data="cancel_index")]])
 
-    if not text:
-        message.reply_text("❌ Please send a text message or a link.", reply_markup=cancel_markup)
-        message.stop_propagation()
-        return
-
-    if step == "WAIT_START_LINK":
-        regex = re.compile(tg_link_regex)
-        match = regex.match(text or "")
-        if not match:
-            message.reply_text("❌ Invalid link. Please send a valid Telegram message link for the **Start Message**:", reply_markup=cancel_markup)
+        if not text:
+            message.reply_text("❌ Please send a text message or a link.", reply_markup=cancel_markup)
             message.stop_propagation()
             return
 
-        state["start_link"] = text
-        state["chat_id"] = match[4]
-        state["start_id"] = int(match[5])
-        state["step"] = "WAIT_END_LINK"
-        message.reply_text(f"✅ Start Message saved (ID: {state['start_id']}).\n\nPlease send the **End Message Link**:", reply_markup=cancel_markup)
-        message.stop_propagation()
+        if step == "WAIT_START_LINK":
+            regex = re.compile(tg_link_regex)
+            match = regex.match(text or "")
+            if not match:
+                message.reply_text("❌ Invalid link. Please send a valid Telegram message link for the **Start Message**:", reply_markup=cancel_markup)
+                message.stop_propagation()
+                return
 
-    elif step == "WAIT_END_LINK":
-        regex = re.compile(tg_link_regex)
-        match = regex.match(text or "")
-        if not match:
-            message.reply_text("❌ Invalid link. Please send a valid Telegram message link for the **End Message**:", reply_markup=cancel_markup)
+            state["start_link"] = text
+            state["chat_id"] = match[4]
+            state["start_id"] = int(match[5])
+            state["step"] = "WAIT_END_LINK"
+            message.reply_text(f"✅ Start Message saved (ID: {state['start_id']}).\n\nPlease send the **End Message Link**:", reply_markup=cancel_markup)
             message.stop_propagation()
-            return
 
-        if match[4] != state["chat_id"]:
-            message.reply_text("❌ Error: Start and End messages must be from the same chat.\n\nPlease send a valid **End Message Link** from the same chat:", reply_markup=cancel_markup)
+        elif step == "WAIT_END_LINK":
+            regex = re.compile(tg_link_regex)
+            match = regex.match(text or "")
+            if not match:
+                message.reply_text("❌ Invalid link. Please send a valid Telegram message link for the **End Message**:", reply_markup=cancel_markup)
+                message.stop_propagation()
+                return
+
+            if match[4] != state["chat_id"]:
+                message.reply_text("❌ Error: Start and End messages must be from the same chat.\n\nPlease send a valid **End Message Link** from the same chat:", reply_markup=cancel_markup)
+                message.stop_propagation()
+                return
+
+            state["end_link"] = text
+            state["end_id"] = int(match[5])
+
+            if state["end_id"] < state["start_id"]:
+                state["start_id"], state["end_id"] = state["end_id"], state["start_id"]
+                state["start_link"], state["end_link"] = state["end_link"], state["start_link"]
+
+            state["step"] = "WAIT_TARGET_CHAT"
+            markup = InlineKeyboardMarkup([
+                [InlineKeyboardButton("⏭️ Skip (Size Only)", callback_data="skip_target")],
+                [InlineKeyboardButton("❌ Cancel", callback_data="cancel_index")]
+            ])
+            message.reply_text("✅ End Message saved.\n\nNow, send the **Target Chat ID/Link/Username** to forward messages, or click **Skip** to just calculate the size:", reply_markup=markup)
             message.stop_propagation()
-            return
 
-        state["end_link"] = text
-        state["end_id"] = int(match[5])
+        elif step == "WAIT_TARGET_CHAT":
+            target_input = text.strip()
 
-        if state["end_id"] < state["start_id"]:
-            state["start_id"], state["end_id"] = state["end_id"], state["start_id"]
-            state["start_link"], state["end_link"] = state["end_link"], state["start_link"]
+            # Check if it's a link first
+            regex = re.compile(tg_link_regex)
+            match = regex.match(target_input)
+            if match:
+                target_chat = match[4]
+                if target_chat.isnumeric():
+                    target_chat = int(f"-100{target_chat}")
+            else:
+                # Not a link, could be ID or username
+                target_chat = target_input
+                if target_chat.startswith("-"):
+                    try:
+                        target_chat = int(target_chat)
+                    except ValueError:
+                        pass
+                elif target_chat.isnumeric():
+                    target_chat = int(f"-100{target_chat}")
 
-        state["step"] = "WAIT_TARGET_CHAT"
-        markup = InlineKeyboardMarkup([
-            [InlineKeyboardButton("⏭️ Skip (Size Only)", callback_data="skip_target")],
-            [InlineKeyboardButton("❌ Cancel", callback_data="cancel_index")]
-        ])
-        message.reply_text("✅ End Message saved.\n\nNow, send the **Target Chat ID/Link/Username** to forward messages, or click **Skip** to just calculate the size:", reply_markup=markup)
-        message.stop_propagation()
+            try:
+                chat = client.get_chat(target_chat)
+                state["target_chat"] = chat.id
+            except Exception as e:
+                message.reply_text(f"❌ Error: {e}\n\nCould not find chat `{target_input}`. Please make sure I am a member of that chat and send a valid ID/Username/Link:", reply_markup=cancel_markup)
+                message.stop_propagation()
+                return
 
-    elif step == "WAIT_TARGET_CHAT":
-        target_input = text.strip()
-        target_chat = target_input
-
-        regex = re.compile(tg_link_regex)
-        match = regex.match(target_input)
-        if match:
-            target_chat = match[4]
-            if target_chat.isnumeric():
-                target_chat = int(f"-100{target_chat}")
-
-        try:
-            chat = client.get_chat(target_chat)
-            state["target_chat"] = chat.id
-        except Exception:
-            message.reply_text(f"❌ Could not find chat `{target_input}`. Please make sure I am a member of that chat and send a valid ID/Username/Link:", reply_markup=cancel_markup)
+            state["step"] = "WAIT_FILTERS"
+            markup = InlineKeyboardMarkup([
+                [InlineKeyboardButton("⏭️ Skip (No Filters)", callback_data="skip_filters")],
+                [InlineKeyboardButton("❌ Cancel", callback_data="cancel_index")]
+            ])
+            filters_str = ", ".join(AVAILABLE_FILTERS)
+            message.reply_text(f"✅ Target Chat saved: `{chat.title or chat.username}`\n\nSend **media filters** separated by commas (e.g., `video,document`) or click **Skip** to forward everything.\n\n**Available filters:**\n`{filters_str}`", reply_markup=markup)
             message.stop_propagation()
-            return
 
-        state["step"] = "WAIT_FILTERS"
-        markup = InlineKeyboardMarkup([
-            [InlineKeyboardButton("⏭️ Skip (No Filters)", callback_data="skip_filters")],
-            [InlineKeyboardButton("❌ Cancel", callback_data="cancel_index")]
-        ])
-        filters_str = ", ".join(AVAILABLE_FILTERS)
-        message.reply_text(f"✅ Target Chat saved: `{chat.title or chat.username}`\n\nSend **media filters** separated by commas (e.g., `video,document`) or click **Skip** to forward everything.\n\n**Available filters:**\n`{filters_str}`", reply_markup=markup)
-        message.stop_propagation()
+        elif step == "WAIT_FILTERS":
+            filters_list = [f.strip().lower() for f in text.split(',')]
+            valid_filters = [f for f in filters_list if f in AVAILABLE_FILTERS]
 
-    elif step == "WAIT_FILTERS":
-        filters_list = [f.strip().lower() for f in text.split(',')]
-        valid_filters = [f for f in filters_list if f in AVAILABLE_FILTERS]
+            if not valid_filters:
+                message.reply_text(f"❌ No valid filters found. Available filters: `{', '.join(AVAILABLE_FILTERS)}`.\n\nPlease send valid filters or click **Skip**.", reply_markup=cancel_markup)
+                message.stop_propagation()
+                return
 
-        if not valid_filters:
-            message.reply_text(f"❌ No valid filters found. Available filters: `{', '.join(AVAILABLE_FILTERS)}`.\n\nPlease send valid filters or click **Skip**.", reply_markup=cancel_markup)
+            state["filters"] = ",".join(valid_filters)
+            finalize_index(client, message.reply_text("Processing...", quote=True), state)
             message.stop_propagation()
-            return
-
-        state["filters"] = ",".join(valid_filters)
-        finalize_index(client, message.reply_text("Processing...", quote=True), state)
+    except Exception as e:
+        LOGGER.exception(e)
+        if user_id in USER_STATES:
+            del USER_STATES[user_id]
+        message.reply_text(f"❌ An error occurred: {e}\nInteractive session cancelled.")
         message.stop_propagation()
 
 @Client.on_callback_query(filters.regex("^skip_target"))
