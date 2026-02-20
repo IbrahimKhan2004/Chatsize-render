@@ -9,7 +9,7 @@ from bot import LOGGER, botStartTime
 from config import Config
 from helper_funcs.auth_user_check import AuthUserCheck
 from helper_funcs.force_sub import ForceSub
-from pyrogram import Client, filters
+from pyrogram import Client, filters, StopPropagation
 from pyrogram.enums.parse_mode import ParseMode
 from pyrogram.enums import ChatType, ChatAction
 from pyrogram.errors import FloodWait
@@ -178,7 +178,7 @@ def run_task(gelen: Message, duzenlenecek: Message):
             message:Message = None
             try:
                 message = duzenlenecek._client.get_messages(chat_id=chat_id, message_ids=current, replies=0)
-                if a != b:
+                if message and not message.empty and a != b:
                     forward_this = True
                     if filters_list:
                         has_allowed_media = False
@@ -195,7 +195,7 @@ def run_task(gelen: Message, duzenlenecek: Message):
             except FloodWait as e:
                 time.sleep(e.value)
                 message = duzenlenecek._client.get_messages(chat_id=chat_id, message_ids=current, replies=0)
-                if a != b:
+                if message and not message.empty and a != b:
                     forward_this = True
                     if filters_list:
                         has_allowed_media = False
@@ -444,6 +444,8 @@ def interactive_handler(client, message):
             state["filters"] = ",".join(valid_filters)
             finalize_index(client, message.reply_text("Processing...", quote=True), state)
             message.stop_propagation()
+    except StopPropagation:
+        raise
     except Exception as e:
         LOGGER.exception(e)
         if user_id in USER_STATES:
