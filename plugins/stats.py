@@ -94,7 +94,7 @@ def getHerokuDetails(h_api_key, h_app_name):
 @Client.on_message(filters.command("stats"))
 async def stats(_, message: Message):
     if not AuthUserCheck(message): return
-    if ForceSub(message) == 400: return
+    if await ForceSub(message) == 400: return
     duz = await message.reply_text("...")
     currentTime = TimeFormatter((time() - botStartTime))
     osUptime = TimeFormatter((time() - boot_time()))
