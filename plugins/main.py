@@ -30,10 +30,10 @@ b=""
 forward_delay = 6
 
 @Client.on_callback_query(filters.regex("^cancel_task"))
-def cancel_handler(_, query):
+async def cancel_handler(_, query):
     user_id = query.from_user.id
     cancelled_tasks.add(user_id)
-    query.answer("Cancelling task...", show_alert=True)
+    await query.answer("Cancelling task...", show_alert=True)
 
 def run_task(gelen: Message, duzenlenecek: Message):
     user_id = gelen.from_user.id
@@ -323,7 +323,7 @@ def finalize_index(client, message, state):
     handler(client, original_message)
 
 @Client.on_message(filters.private & filters.incoming, group=-1)
-def interactive_handler(client, message):
+async def interactive_handler(client, message):
     user_id = message.from_user.id
     try:
         if user_id not in USER_STATES:
@@ -347,7 +347,7 @@ def interactive_handler(client, message):
         cancel_markup = InlineKeyboardMarkup([[InlineKeyboardButton("❌ Cancel", callback_data="cancel_index")]])
 
         if not text:
-            message.reply_text("❌ Please send a text message or a link.", reply_markup=cancel_markup)
+            await message.reply_text("❌ Please send a text message or a link.", reply_markup=cancel_markup)
             message.stop_propagation()
             return
 
@@ -355,7 +355,7 @@ def interactive_handler(client, message):
             regex = re.compile(tg_link_regex)
             match = regex.match(text or "")
             if not match:
-                message.reply_text("❌ Invalid link. Please send a valid Telegram message link for the **Start Message**:", reply_markup=cancel_markup)
+                await message.reply_text("❌ Invalid link. Please send a valid Telegram message link for the **Start Message**:", reply_markup=cancel_markup)
                 message.stop_propagation()
                 return
 
@@ -363,19 +363,19 @@ def interactive_handler(client, message):
             state["chat_id"] = match[4]
             state["start_id"] = int(match[5])
             state["step"] = "WAIT_END_LINK"
-            message.reply_text(f"✅ Start Message saved (ID: {state['start_id']}).\n\nPlease send the **End Message Link**:", reply_markup=cancel_markup)
+            await message.reply_text(f"✅ Start Message saved (ID: {state['start_id']}).\n\nPlease send the **End Message Link**:", reply_markup=cancel_markup)
             message.stop_propagation()
 
         elif step == "WAIT_END_LINK":
             regex = re.compile(tg_link_regex)
             match = regex.match(text or "")
             if not match:
-                message.reply_text("❌ Invalid link. Please send a valid Telegram message link for the **End Message**:", reply_markup=cancel_markup)
+                await message.reply_text("❌ Invalid link. Please send a valid Telegram message link for the **End Message**:", reply_markup=cancel_markup)
                 message.stop_propagation()
                 return
 
             if match[4] != state["chat_id"]:
-                message.reply_text("❌ Error: Start and End messages must be from the same chat.\n\nPlease send a valid **End Message Link** from the same chat:", reply_markup=cancel_markup)
+                await message.reply_text("❌ Error: Start and End messages must be from the same chat.\n\nPlease send a valid **End Message Link** from the same chat:", reply_markup=cancel_markup)
                 message.stop_propagation()
                 return
 
@@ -391,7 +391,7 @@ def interactive_handler(client, message):
                 [InlineKeyboardButton("⏭️ Skip (Size Only)", callback_data="skip_target")],
                 [InlineKeyboardButton("❌ Cancel", callback_data="cancel_index")]
             ])
-            message.reply_text("✅ End Message saved.\n\nNow, send the **Target Chat ID/Link/Username** to forward messages, or click **Skip** to just calculate the size:", reply_markup=markup)
+            await message.reply_text("✅ End Message saved.\n\nNow, send the **Target Chat ID/Link/Username** to forward messages, or click **Skip** to just calculate the size:", reply_markup=markup)
             message.stop_propagation()
 
         elif step == "WAIT_TARGET_CHAT":
@@ -419,7 +419,7 @@ def interactive_handler(client, message):
                 chat = client.get_chat(target_chat)
                 state["target_chat"] = chat.id
             except Exception as e:
-                message.reply_text(f"❌ Error: {e}\n\nCould not find chat `{target_input}`. Please make sure I am a member of that chat and send a valid ID/Username/Link:", reply_markup=cancel_markup)
+                await message.reply_text(f"❌ Error: {e}\n\nCould not find chat `{target_input}`. Please make sure I am a member of that chat and send a valid ID/Username/Link:", reply_markup=cancel_markup)
                 message.stop_propagation()
                 return
 
@@ -429,7 +429,7 @@ def interactive_handler(client, message):
                 [InlineKeyboardButton("❌ Cancel", callback_data="cancel_index")]
             ])
             filters_str = ", ".join(AVAILABLE_FILTERS)
-            message.reply_text(f"✅ Target Chat saved: `{chat.title or chat.username}`\n\nSend **media filters** separated by commas (e.g., `video,document`) or click **Skip** to forward everything.\n\n**Available filters:**\n`{filters_str}`", reply_markup=markup)
+            await message.reply_text(f"✅ Target Chat saved: `{chat.title or chat.username}`\n\nSend **media filters** separated by commas (e.g., `video,document`) or click **Skip** to forward everything.\n\n**Available filters:**\n`{filters_str}`", reply_markup=markup)
             message.stop_propagation()
 
         elif step == "WAIT_FILTERS":
@@ -437,12 +437,12 @@ def interactive_handler(client, message):
             valid_filters = [f for f in filters_list if f in AVAILABLE_FILTERS]
 
             if not valid_filters:
-                message.reply_text(f"❌ No valid filters found. Available filters: `{', '.join(AVAILABLE_FILTERS)}`.\n\nPlease send valid filters or click **Skip**.", reply_markup=cancel_markup)
+                await message.reply_text(f"❌ No valid filters found. Available filters: `{', '.join(AVAILABLE_FILTERS)}`.\n\nPlease send valid filters or click **Skip**.", reply_markup=cancel_markup)
                 message.stop_propagation()
                 return
 
             state["filters"] = ",".join(valid_filters)
-            finalize_index(client, message.reply_text("Processing...", quote=True), state)
+            finalize_index(client, await message.reply_text("Processing...", quote=True), state)
             message.stop_propagation()
     except StopPropagation:
         raise
@@ -450,47 +450,47 @@ def interactive_handler(client, message):
         LOGGER.exception(e)
         if user_id in USER_STATES:
             del USER_STATES[user_id]
-        message.reply_text(f"❌ An error occurred: {e}\nInteractive session cancelled.")
+        await message.reply_text(f"❌ An error occurred: {e}\nInteractive session cancelled.")
         message.stop_propagation()
 
 @Client.on_callback_query(filters.regex("^skip_target"))
-def skip_target_handler(client, query):
+async def skip_target_handler(client, query):
     user_id = query.from_user.id
     if user_id not in USER_STATES:
-        query.answer("Session expired.", show_alert=True)
+        await query.answer("Session expired.", show_alert=True)
         return
 
     state = USER_STATES[user_id]
     state["target_chat"] = None
     state["filters"] = None
-    query.answer("Skipped forwarding.")
+    await query.answer("Skipped forwarding.")
     finalize_index(client, query.message, state)
 
 @Client.on_callback_query(filters.regex("^skip_filters"))
-def skip_filters_handler(client, query):
+async def skip_filters_handler(client, query):
     user_id = query.from_user.id
     if user_id not in USER_STATES:
-        query.answer("Session expired.", show_alert=True)
+        await query.answer("Session expired.", show_alert=True)
         return
 
     state = USER_STATES[user_id]
     state["filters"] = None
-    query.answer("Skipped filters.")
+    await query.answer("Skipped filters.")
     finalize_index(client, query.message, state)
 
 @Client.on_message((filters.forwarded | ((filters.regex(tg_link_regex)) & filters.text)) & filters.private & filters.incoming)
-def handler(_, message: Message):
+async def handler(_, message: Message):
     if message.from_user.id in USER_STATES:
         return
     if not AuthUserCheck(message): return
     if ForceSub(message) == 400: return
     # add to quee
-    duz:Message = message.reply_text(f"✅ Your Turn: {len(quee)+1}\nWait. Dont spam with same ID.", quote=True, disable_web_page_preview=True)
+    duz:Message = await message.reply_text(f"✅ Your Turn: {len(quee)+1}\nWait. Dont spam with same ID.", quote=True, disable_web_page_preview=True)
     quee.append([message, duz])
     if len(quee) == 1: run_task(message, duz)
 
 @Client.on_message(filters.command(["help", "yardım", "yardim", "start", "h", "y"]))
-def welcome(_, message: Message):
+async def welcome(_, message: Message):
     if not AuthUserCheck(message): return
     if ForceSub(message) == 400: return
     te = "🇹🇷 Esenlikler. Bir kanal/grup kimliği gönder, tüm dosyaların toplam boyutunu hesaplaycağım." \
@@ -498,10 +498,10 @@ def welcome(_, message: Message):
         "\n\n🇬🇧 Hi. Send a channel/group id and I will calculate the full size of all files." \
         "\nClick the last message in the channel / group, copy the message link, paste it to me Sir.." \
         f"\n\n**@{Config.CHANNEL_OR_CONTACT}**"
-    message.reply_text(te, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
+    await message.reply_text(te, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
 
 @Client.on_message(filters.command("index") & filters.private)
-def index_command(client, message):
+async def index_command(client, message):
     if not AuthUserCheck(message): return
     if ForceSub(message) == 400: return
     user_id = message.from_user.id
@@ -510,21 +510,21 @@ def index_command(client, message):
         "original_message": message,
         "last_activity": time.time()
     }
-    message.reply_text(
+    await message.reply_text(
         "Please send the **Start Message Link**:\n(e.g., https://t.me/IslamicNasheedHQ/6)",
         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❌ Cancel", callback_data="cancel_index")]])
     )
 
 @Client.on_callback_query(filters.regex("^cancel_index"))
-def cancel_index_handler(_, query):
+async def cancel_index_handler(_, query):
     user_id = query.from_user.id
     if user_id in USER_STATES:
         del USER_STATES[user_id]
-    query.message.edit_text("❌ Interactive session cancelled.")
-    query.answer()
+    await query.message.edit_text("❌ Interactive session cancelled.")
+    await query.answer()
 
 @Client.on_message(filters.command("delay"))
-def delay_command(_, message: Message):
+async def delay_command(_, message: Message):
     global forward_delay
     if not AuthUserCheck(message): return
     if len(message.command) > 1:
@@ -532,10 +532,10 @@ def delay_command(_, message: Message):
             delay = int(message.command[1])
             if 0 <= delay <= 60:
                 forward_delay = delay
-                message.reply_text(f"Forwarding delay has been set to {delay} seconds.")
+                await message.reply_text(f"Forwarding delay has been set to {delay} seconds.")
             else:
-                message.reply_text("Please provide a delay between 0 and 60 seconds.")
+                await message.reply_text("Please provide a delay between 0 and 60 seconds.")
         except ValueError:
-            message.reply_text("Invalid delay. Please provide a number.")
+            await message.reply_text("Invalid delay. Please provide a number.")
     else:
-        message.reply_text(f"Current delay is {forward_delay} seconds. Use /delay <seconds> to set a new delay.")
+        await message.reply_text(f"Current delay is {forward_delay} seconds. Use /delay <seconds> to set a new delay.")
