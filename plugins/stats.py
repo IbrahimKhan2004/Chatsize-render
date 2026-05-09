@@ -92,10 +92,10 @@ def getHerokuDetails(h_api_key, h_app_name):
         return None
 
 @Client.on_message(filters.command("stats"))
-def stats(_, message: Message):
+async def stats(_, message: Message):
     if not AuthUserCheck(message): return
     if ForceSub(message) == 400: return
-    duz = message.reply_text("...")
+    duz = await message.reply_text("...")
     currentTime = TimeFormatter((time() - botStartTime))
     osUptime = TimeFormatter((time() - boot_time()))
     total, used, free, disk= disk_usage('/')
@@ -134,4 +134,4 @@ def stats(_, message: Message):
         Config.HEROKU_API_KEY, Config.HEROKU_APP_NAME
     ):
         stats += heroku
-    duz.edit_text(stats)
+    await duz.edit_text(stats)
