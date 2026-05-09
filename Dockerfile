@@ -1,5 +1,5 @@
 # Use a lightweight Python base image
-FROM python:3.11-slim  # Changed 3.9→3.11; pyrofork uses `int | str` union syntax (PEP 604) which requires Python 3.10+; 3.9 raises TypeError: unsupported operand type(s) for |
+FROM python:3.11-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
