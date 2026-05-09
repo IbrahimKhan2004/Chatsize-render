@@ -417,7 +417,7 @@ async def interactive_handler(client, message):
                     target_chat = int(f"-100{target_chat}")
 
             try:
-                chat = client.get_chat(target_chat)
+                chat = await client.get_chat(target_chat)
                 state["target_chat"] = chat.id
             except Exception as e:
                 await message.reply_text(f"❌ Error: {e}\n\nCould not find chat `{target_input}`. Please make sure I am a member of that chat and send a valid ID/Username/Link:", reply_markup=cancel_markup)
@@ -484,7 +484,7 @@ async def handler(_, message: Message):
     if message.from_user.id in USER_STATES:
         return
     if not AuthUserCheck(message): return
-    if ForceSub(message) == 400: return
+    if await ForceSub(message) == 400: return
     # add to quee
     duz:Message = await message.reply_text(f"✅ Your Turn: {len(quee)+1}\nWait. Dont spam with same ID.", quote=True, disable_web_page_preview=True)
     quee.append([message, duz])
@@ -493,7 +493,7 @@ async def handler(_, message: Message):
 @Client.on_message(filters.command(["help", "yardım", "yardim", "start", "h", "y"]))
 async def welcome(_, message: Message):
     if not AuthUserCheck(message): return
-    if ForceSub(message) == 400: return
+    if await ForceSub(message) == 400: return
     te = "🇹🇷 Esenlikler. Bir kanal/grup kimliği gönder, tüm dosyaların toplam boyutunu hesaplaycağım." \
         "\nKanaldaki / gruptaki son mesaja tıkla, mesaj bağlantısını kopyala, bana yapıştır." \
         "\n\n🇬🇧 Hi. Send a channel/group id and I will calculate the full size of all files." \
@@ -504,7 +504,7 @@ async def welcome(_, message: Message):
 @Client.on_message(filters.command("index") & filters.private)
 async def index_command(client, message):
     if not AuthUserCheck(message): return
-    if ForceSub(message) == 400: return
+    if await ForceSub(message) == 400: return
     user_id = message.from_user.id
     USER_STATES[user_id] = {
         "step": "WAIT_START_LINK",
