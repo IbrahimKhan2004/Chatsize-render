@@ -1,5 +1,6 @@
 # https://huzunluartemis.github.io/ChatSizeBot/
 
+import asyncio
 import math
 import re
 import time
@@ -35,7 +36,7 @@ async def cancel_handler(_, query):
     cancelled_tasks.add(user_id)
     await query.answer("Cancelling task...", show_alert=True)
 
-def run_task(gelen: Message, duzenlenecek: Message):
+async def run_task(gelen: Message, duzenlenecek: Message):
     user_id = gelen.from_user.id
     if user_id in cancelled_tasks:
         cancelled_tasks.remove(user_id)
@@ -54,13 +55,13 @@ def run_task(gelen: Message, duzenlenecek: Message):
             regex = re.compile(tg_link_regex)
             match = regex.match(link_to_parse)
             if not match:
-                duzenlenecek.edit_text(
+                await duzenlenecek.edit_text(
                     '🇹🇷 Kanaldaki son mesajı iletin ya da son mesaj linkini gönderin.' \
                     '\n🇬🇧 Forward the last message on the channel or send the last message link.' \
                     '\nÖrnek / Example: `https://t.me/c/6262626/24234234`'
                     , disable_web_page_preview=True
                 )
-                return on_task_complete()
+                return await on_task_complete()
             chat_id = match[4]
             last_msg_id = int(match[5])
             a = match[6]
@@ -76,44 +77,44 @@ def run_task(gelen: Message, duzenlenecek: Message):
             last_msg_id = gelen.forward_from_message_id
             chat_id = gelen.forward_from_chat.username or gelen.forward_from_chat.id
         else:
-            duzenlenecek.edit_text(
+            await duzenlenecek.edit_text(
                     '🇹🇷 Bir kanal ya da grup olmalı.' \
                     '\n🇬🇧 Must be a channel or group.'
                     , disable_web_page_preview=True
                 )
-            return on_task_complete()
+            return await on_task_complete()
         # get access to chat
         try:
-            gotchat:Chat = duzenlenecek._client.get_chat(chat_id)
+            gotchat:Chat = await duzenlenecek._client.get_chat(chat_id)
         except (ChannelInvalid, ChannelPrivate, ChatAdminRequired):
-            duzenlenecek.edit_text(
+            await duzenlenecek.edit_text(
                 '🇹🇷 Beni kanalınıza/grubunuza yönetici olarak eklemelisiniz.' \
                     '\n🇬🇧 You must add me to your channel/group as admin.'
                     , disable_web_page_preview=True
             )
-            return on_task_complete()
+            return await on_task_complete()
         except (UsernameInvalid, UsernameNotModified):
-            duzenlenecek.edit_text('Geçersiz kullanıcı adı.', disable_web_page_preview=True)
-            return on_task_complete()
+            await duzenlenecek.edit_text('Geçersiz kullanıcı adı.', disable_web_page_preview=True)
+            return await on_task_complete()
         except Exception as e:
             LOGGER.exception(e)
-            duzenlenecek.edit_text(f'Errors - {e}', disable_web_page_preview=True)
+            await duzenlenecek.edit_text(f'Errors - {e}', disable_web_page_preview=True)
 
         if not gotchat:
-            duzenlenecek.edit_text(
+            await duzenlenecek.edit_text(
                 '🇹🇷 Beni kanalınıza/grubunuza yönetici olarak eklemelisiniz.' \
                     '\n🇬🇧 You must add me to your channel/group as admin.'
                     , disable_web_page_preview=True
             )
-            return on_task_complete()
+            return await on_task_complete()
 
         if a != b:
             try:
-                duzenlenecek._client.send_chat_action(t_chatid, ChatAction.TYPING)
+                await duzenlenecek._client.send_chat_action(t_chatid, ChatAction.TYPING)
             except Exception as e:
-                duzenlenecek.edit_text(f'Error getting target chat: {e}\n\nPlease make sure I am a member of the target channel and have permission to send messages.')
+                await duzenlenecek.edit_text(f'Error getting target chat: {e}\n\nPlease make sure I am a member of the target channel and have permission to send messages.')
                 LOGGER.exception(e)
-                return on_task_complete()
+                return await on_task_complete()
 
         #
         txt = ""
@@ -127,8 +128,8 @@ def run_task(gelen: Message, duzenlenecek: Message):
         while current < total_loop:
             if user_id in cancelled_tasks:
                 cancelled_tasks.remove(user_id)
-                duzenlenecek.edit_text("❌ **Task Cancelled by user.**")
-                return on_task_complete()
+                await duzenlenecek.edit_text("❌ **Task Cancelled by user.**")
+                return await on_task_complete()
 
             current = current + 1
             # hız
@@ -172,12 +173,12 @@ def run_task(gelen: Message, duzenlenecek: Message):
 
                     txt = f"{progress}\n\n{infochat}\n\n{process_info}\n\n{time_info}"
                     cancel_button = InlineKeyboardMarkup([[InlineKeyboardButton("❌ Cancel Task ❌", callback_data="cancel_task")]])
-                    duzenlenecek.edit_text(text=txt, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True, reply_markup=cancel_button)
+                    await duzenlenecek.edit_text(text=txt, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True, reply_markup=cancel_button)
                 except: pass
             # kaydet
             message:Message = None
             try:
-                message = duzenlenecek._client.get_messages(chat_id=chat_id, message_ids=current, replies=0)
+                message = await duzenlenecek._client.get_messages(chat_id=chat_id, message_ids=current, replies=0)
                 if message and not message.empty and a != b:
                     forward_this = True
                     if filters_list:
@@ -190,11 +191,11 @@ def run_task(gelen: Message, duzenlenecek: Message):
                             forward_this = False
                     
                     if forward_this:
-                        time.sleep(forward_delay)
-                        message.copy(t_chatid)
+                        await asyncio.sleep(forward_delay)
+                        await message.copy(t_chatid)
             except FloodWait as e:
-                time.sleep(e.value)
-                message = duzenlenecek._client.get_messages(chat_id=chat_id, message_ids=current, replies=0)
+                await asyncio.sleep(e.value)
+                message = await duzenlenecek._client.get_messages(chat_id=chat_id, message_ids=current, replies=0)
                 if message and not message.empty and a != b:
                     forward_this = True
                     if filters_list:
@@ -207,8 +208,8 @@ def run_task(gelen: Message, duzenlenecek: Message):
                             forward_this = False
                     
                     if forward_this:
-                        time.sleep(forward_delay)
-                        message.copy(t_chatid)
+                        await asyncio.sleep(forward_delay)
+                        await message.copy(t_chatid)
             except Exception as e:
                 LOGGER.exception(e)
                 continue
@@ -277,23 +278,23 @@ def run_task(gelen: Message, duzenlenecek: Message):
 
 
             txt = f"{progress}\n\n{infochat}\n\n{process_info}\n\n{time_info}\n\n[✅](https://t.me/{Config.CHANNEL_OR_CONTACT}) **Finished**"
-            duzenlenecek.edit_text(
+            await duzenlenecek.edit_text(
                      txt,
                     parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True
                 )
     except Exception as e:
-        duzenlenecek.edit_text("Cannot completed. Try again later.")
+        await duzenlenecek.edit_text("Cannot completed. Try again later.")
         LOGGER.exception(e)
-    on_task_complete()
+    await on_task_complete()
 
-def on_task_complete():
+async def on_task_complete():
     if len(quee) > 0:
         del quee[0]
     if len(quee) > 0:
-        time.sleep(10)
-        run_task(quee[0][0], quee[0][1])
+        await asyncio.sleep(10)
+        await run_task(quee[0][0], quee[0][1])
 
-def finalize_index(client, message, state):
+async def finalize_index(client, message, state):
     user_id = state["original_message"].from_user.id
     start_id = state["start_id"]
     end_id = state["end_id"]
@@ -316,11 +317,11 @@ def finalize_index(client, message, state):
     if user_id in USER_STATES:
         del USER_STATES[user_id]
 
-    message.edit_text("✅ All data collected. Starting task...", reply_markup=None)
+    await message.edit_text("✅ All data collected. Starting task...", reply_markup=None)
 
     original_message = state["original_message"]
     original_message.text = command_text
-    handler(client, original_message)
+    await handler(client, original_message)
 
 @Client.on_message(filters.private & filters.incoming, group=-1)
 async def interactive_handler(client, message):
@@ -442,7 +443,7 @@ async def interactive_handler(client, message):
                 return
 
             state["filters"] = ",".join(valid_filters)
-            finalize_index(client, await message.reply_text("Processing...", quote=True), state)
+            await finalize_index(client, await message.reply_text("Processing...", quote=True), state)
             message.stop_propagation()
     except StopPropagation:
         raise
@@ -464,7 +465,7 @@ async def skip_target_handler(client, query):
     state["target_chat"] = None
     state["filters"] = None
     await query.answer("Skipped forwarding.")
-    finalize_index(client, query.message, state)
+    await finalize_index(client, query.message, state)
 
 @Client.on_callback_query(filters.regex("^skip_filters"))
 async def skip_filters_handler(client, query):
@@ -476,7 +477,7 @@ async def skip_filters_handler(client, query):
     state = USER_STATES[user_id]
     state["filters"] = None
     await query.answer("Skipped filters.")
-    finalize_index(client, query.message, state)
+    await finalize_index(client, query.message, state)
 
 @Client.on_message((filters.forwarded | ((filters.regex(tg_link_regex)) & filters.text)) & filters.private & filters.incoming)
 async def handler(_, message: Message):
@@ -487,7 +488,7 @@ async def handler(_, message: Message):
     # add to quee
     duz:Message = await message.reply_text(f"✅ Your Turn: {len(quee)+1}\nWait. Dont spam with same ID.", quote=True, disable_web_page_preview=True)
     quee.append([message, duz])
-    if len(quee) == 1: run_task(message, duz)
+    if len(quee) == 1: await run_task(message, duz)
 
 @Client.on_message(filters.command(["help", "yardım", "yardim", "start", "h", "y"]))
 async def welcome(_, message: Message):
