@@ -1,4 +1,4 @@
-pyrogram==2.0.106
+pyrofork
 tgcrypto==1.2.5
 heroku3==5.2.1
 psutil==7.1.1

@@ -10,7 +10,7 @@ from config import Config
 from helper_funcs.auth_user_check import AuthUserCheck
 from helper_funcs.force_sub import ForceSub
 from pyrogram import Client, filters, StopPropagation
-from pyrogram.enums.parse_mode import ParseMode
+from pyrogram.enums import ParseMode
 from pyrogram.enums import ChatType, ChatAction
 from pyrogram.errors import FloodWait
 from helper_funcs.humanfuncs import TimeFormatter, get_progressbar, humanbytes
