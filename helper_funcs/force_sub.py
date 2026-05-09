@@ -3,7 +3,7 @@
 # https://huzunluartemis.github.io/ChatSizeBot/
 
 import time
-from pyrogram.enums.parse_mode import ParseMode
+from pyrogram.enums import ParseMode
 from bot import LOGGER
 from config import Config
 from pyrogram.errors import FloodWait, UserNotParticipant
